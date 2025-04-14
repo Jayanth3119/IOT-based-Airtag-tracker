@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IoT GPS Tracker Simulator</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+        }
+        .form-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        input[type="text"],
+        input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4285f4;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        button:hover {
+            background-color: #3367d6;
+        }
+        .response {
+            background-color: #f1f1f1;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 20px;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        .map-container {
+            height: 300px;
+            margin-top: 20px;
+        }
+        #map {
+            height: 100%;
+            border-radius: 8px;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css" />
+</head>
+<body>
+    <h1>IoT GPS Tracker Simulator</h1>
+    <p>Use this page to simulate device updates for testing your tracker dashboard.</p>
+    
+    <div class="form-container">
+        <div class="form-group">
+            <label for="device-id">Device ID:</label>
+            <input type="text" id="device-id" value="ESP-Tracker-01">
+        </div>
+        
+        <div class="form-group">
+            <label for="latitude">Latitude:</label>
+            <input type="number" id="latitude" step="0.000001" value="37.7749">
+        </div>
+        
+        <div class="form-group">
+            <label for="longitude">Longitude:</label>
+            <input type="number" id="longitude" step="0.000001" value="-122.4194">
+        </div>
+        
+        <div class="form-group">
+            <label for="accuracy">Accuracy (meters):</label>
+            <input type="number" id="accuracy" value="10">
+        </div>
+        
+        <div class="form-group">
+            <label for="speed">Speed (km/h):</label>
+            <input type="number" id="speed" value="0">
+        </div>
+        
+        <div class="form-group">
+            <label for="battery">Battery (%):</label>
+            <input type="number" id="battery" min="0" max="100" value="80">
+        </div>
+        
+        <div class="form-group">
+            <label for="signal">Signal Strength (%):</label>
+            <input type="number" id="signal" min="0" max="100" value="75">
+        </div>
+        
+        <button id="send-btn">Send Update</button>
+        <button id="random-btn">Random Location</button>
+    </div>
+    
+    <div class="map-container">
+        <div id="map"></div>
+    </div>
+    
+    <div class="response" id="response">
+        Response will appear here...
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js"></script>
+    <script>
+        // Initialize map
+        const map = L.map('map').setView([37.7749, -122.4194], 13);
+        let marker;
+        
+        // Add tile layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+        
+        // Initialize marker
+        marker = L.marker([37.7749, -122.4194]).addTo(map);
+        
+        // Function to update map with form values
+        function updateMap() {
+            const lat = parseFloat(document.getElementById('latitude').value);
+            const lng = parseFloat(document.getElementById('longitude').value);
+            
+            marker.setLatLng([lat, lng]);
+            map.setView([lat, lng], 13);
+        }
+        
+        // Function to generate random location around center
+        function randomLocation() {
+            const centerLat = 37.7749;
+            const centerLng = -122.4194;
+            const radius = 0.05; // ~5km
+            
+            const lat = centerLat + (Math.random() - 0.5) * radius;
+            const lng = centerLng + (Math.random() - 0.5) * radius;
+            
+            document.getElementById('latitude').value = lat.toFixed(6);
+            document.getElementById('longitude').value = lng.toFixed(6);
+            document.getElementById('accuracy').value = Math.floor(Math.random() * 20) + 5; // 5-25m
+            document.getElementById('speed').value = Math.floor(Math.random() * 60); // 0-60 km/h
+            document.getElementById('battery').value = Math.floor(Math.random() * 100); // 0-100%
+            document.getElementById('signal').value = Math.floor(Math.random() * 100); // 0-100%
+            
+            updateMap();
+        }
+        
+        // Function to send data to API
+        async function sendUpdate() {
+            const data = {
+                device_id: document.getElementById('device-id').value,
+                latitude: parseFloat(document.getElementById('latitude').value),
+                longitude: parseFloat(document.getElementById('longitude').value),
+                accuracy: parseFloat(document.getElementById('accuracy').value),
+                speed: parseFloat(document.getElementById('speed').value),
+                battery: parseInt(document.getElementById('battery').value),
+                signal: parseInt(document.getElementById('signal').value)
+            };
+            
+            try {
+                const response = await fetch('/api/update', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                document.getElementById('response').textContent = JSON.stringify(result, null, 2);
+                
+                if (response.ok) {
+                    document.getElementById('response').style.color = 'green';
+                } else {
+                    document.getElementById('response').style.color = 'red';
+                }
+            } catch (error) {
+                document.getElementById('response').textContent = `Error: ${error.message}`;
+                document.getElementById('response').style.color = 'red';
+            }
+        }
+        
+        // Event listeners
+        document.getElementById('send-btn').addEventListener('click', () => {
+            updateMap();
+            sendUpdate();
+        });
+        
+        document.getElementById('random-btn').addEventListener('click', randomLocation);
+        
+        // Map click event to set location
+        map.on('click', (e) => {

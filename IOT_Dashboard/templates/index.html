@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IoT GPS Tracker Dashboard</title>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css" />
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo i {
+            font-size: 24px;
+            color: #4285f4;
+            margin-right: 10px;
+        }
+        
+        .logo h1 {
+            font-size: 24px;
+            font-weight: 600;
+        }
+        
+        .status-bar {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .status-item {
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+        }
+        
+        .status-item i {
+            margin-right: 5px;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 20px;
+        }
+        
+        #map {
+            height: 500px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .info-panel {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        
+        .device-info h2 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .info-item:last-child {
+            border-bottom: none;
+        }
+        
+        .info-label {
+            color: #666;
+        }
+        
+        .info-value {
+            font-weight: 500;
+        }
+        
+        .buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .btn {
+            padding: 12px;
+            border: none;
+            border-radius: 5px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s;
+        }
+        
+        .btn i {
+            margin-right: 8px;
+        }
+        
+        .btn-primary {
+            background-color: #4285f4;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #3367d6;
+        }
+        
+        .btn-secondary {
+            background-color: #34a853;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #2e8b47;
+        }
+        
+        .btn-danger {
+            background-color: #ea4335;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background-color: #d33426;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .nav-link {
+            color: #f5f7f9;
+            text-decoration: none;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+        }
+        
+        .nav-link i {
+            margin-right: 5px;
+        }
+        
+        .nav-link:hover {
+            text-decoration: underline;
+        }
+        
+        .history-panel {
+            margin-top: 20px;
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .history-panel h2 {
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+        
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+            font-size: 14px;
+        }
+        
+        .history-location {
+            color: #666;
+        }
+        
+        .history-time {
+            color: #999;
+        }
+        
+        .battery {
+            display: flex;
+            align-items: center;
+        }
+        
+        .battery-level {
+            width: 30px;
+            height: 15px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            margin-right: 5px;
+            position: relative;
+        }
+        
+        .battery-fill {
+            height: 100%;
+            background-color: #34a853;
+            transition: width 0.3s ease;
+        }
+        
+        .low-battery {
+            background-color: #ea4335;
+        }
+        
+        /* Manual coordinates entry form */
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #666;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .form-row {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .form-row .form-group {
+            flex: 1;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            #map {
+                height: 350px;
+            }
+            
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .status-bar {
+                margin-top: 10px;
+            }
+            
+            .form-row {
+                flex-direction: column;
+                gap: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">
+                <i class="fas fa-map-marker-alt"></i>
+                <h1>IoT GPS Tracker</h1>
+            </div>
+            <div class="status-bar">
+                <div class="status-item" id="signal-strength">
+                    <i class="fas fa-signal"></i>
+                    <span>Signal: Good</span>
+                </div>
+                <div class="status-item">
+                    <div class="battery">
+                        <div class="battery-level">
+                            <div class="battery-fill" id="battery-fill" style="width: 80%;"></div>
+                        </div>
+                        <span id="battery-percentage">80%</span>
+                    </div>
+                </div>
+                <div class="status-item" id="last-update">
+                    <i class="far fa-clock"></i>
+                    <span>Last update: 2 min ago</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="nav-links">
+            <button id="refresh-btn" class="btn btn-primary">
+                <a href="/" class="nav-link active">
+                    <i class="fas fa-home"></i> Dashboard
+                </a>
+            </button>
+            <button id="refresh-btn" class="btn btn-primary">
+                <a href="/find-vehicle" class="nav-link">
+                    <i class="fas fa-tag"></i> Find Vehicle
+                </a>
+            </button>
+            <button id="refresh-btn" class="btn btn-primary">
+                <a href="/air-tag" class="nav-link">
+                    <i class="fas fa-vial"></i> AirTag Tracker
+                </a>
+            </button>
+            <button id="refresh-btn" class="btn btn-primary">
+                <a href="/simulate" class="nav-link">
+                    <i class="fas fa-vial"></i> Simulator
+                </a>
+            </button>
+        </div>
+        
+        <div class="main-content">
+            <div id="map"></div>
+            
+            <div class="sidebar">
+                <div class="info-panel device-info">
+                    <h2>Device Information</h2>
+                    <div class="info-item">
+                        <span class="info-label">Device Name</span>
+                        <span class="info-value">ESP-Tracker-01</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Latitude</span>
+                        <span class="info-value" id="latitude">--</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Longitude</span>
+                        <span class="info-value" id="longitude">--</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Accuracy</span>
+                        <span class="info-value" id="accuracy">--</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Speed</span>
+                        <span class="info-value" id="speed">--</span>
+                    </div>
+                    
+                    <div class="buttons">
+                        <button id="refresh-btn" class="btn btn-primary">
+                            <i class="fas fa-sync-alt"></i> Refresh Data
+                        </button>
+                        <button id="directions-btn" class="btn btn-secondary">
+                            <i class="fas fa-directions"></i> Get Directions
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="info-panel manual-coords">
+                    <h2>Manual Coordinates</h2>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="manual-lat">Latitude</label>
+                            <input type="number" id="manual-lat" step="0.000001" placeholder="e.g. 37.7749">
+                        </div>
+                        <div class="form-group">
+                            <label for="manual-lng">Longitude</label>
+                            <input type="number" id="manual-lng" step="0.000001" placeholder="e.g. -122.4194">
+                        </div>
+                    </div>
+                    <div class="buttons">
+                        <button id="set-manual-btn" class="btn btn-primary">
+                            <i class="fas fa-map-pin"></i> Set Location
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="history-panel">
+                    <h2>Recent History</h2>
+                    <div id="location-history">
+                        <div class="history-item">
+                            <span class="history-location">Loading history...</span>
+                            <span class="history-time"></span>
+                        </div>
+                    </div>
+                    <div class="buttons" style="margin-top: 15px;">
+                        <button id="clear-history-btn" class="btn btn-danger">
+                            <i class="fas fa-trash"></i> Clear History
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Leaflet JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js"></script>
+    <script>
+        // Initialize map
+        const map = L.map('map').setView([0, 0], 2);
+        
+        // Add tile layer (Map style)
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+        
+        // Device marker
+        let marker;
+        let locationHistory = [];
+        const MAX_HISTORY_ITEMS = 5;
+        
+        // Function to format timestamp
+        function formatTime(timestamp) {
+            const date = new Date(timestamp);
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+        
+        // Function to update history panel
+        function updateHistoryPanel() {
+            const historyContainer = document.getElementById('location-history');
+            historyContainer.innerHTML = '';
+            
+            locationHistory.forEach(record => {
+                const historyItem = document.createElement('div');
+                historyItem.className = 'history-item';
+                
+                const locationSpan = document.createElement('span');
+                locationSpan.className = 'history-location';
+                locationSpan.textContent = `Lat: ${record.lat.toFixed(6)}, Lng: ${record.lng.toFixed(6)}`;
+                
+                const timeSpan = document.createElement('span');
+                timeSpan.className = 'history-time';
+                timeSpan.textContent = formatTime(record.timestamp);
+                
+                historyItem.appendChild(locationSpan);
+                historyItem.appendChild(timeSpan);
+                historyContainer.appendChild(historyItem);
+            });
+            
+            // If no history items
+            if (locationHistory.length === 0) {
+                const historyItem = document.createElement('div');
+                historyItem.className = 'history-item';
+                historyItem.textContent = 'No location history available';
+                historyContainer.appendChild(historyItem);
+            }
+        }
+        
+        // Function to add location to history
+        function addToHistory(lat, lng, source = "auto") {
+            locationHistory.unshift({
+                lat: lat,
+                lng: lng,
+                timestamp: Date.now(),
+                source: source
+            });
+            
+            // Keep only the recent history
+            if (locationHistory.length > MAX_HISTORY_ITEMS) {
+                locationHistory.pop();
+            }
+            
+            updateHistoryPanel();
+            
+            // Save history to localStorage
+            localStorage.setItem('locationHistory', JSON.stringify(locationHistory));
+        }
+        
+        // Function to load history from localStorage
+        function loadHistoryFromStorage() {
+            const savedHistory = localStorage.getItem('locationHistory');
+            if (savedHistory) {
+                try {
+                    locationHistory = JSON.parse(savedHistory);
+                    updateHistoryPanel();
+                } catch (e) {
+                    console.error('Error loading history:', e);
+                }
+            }
+        }
+        
+        // Function to clear history
+        function clearHistory() {
+            locationHistory = [];
+            updateHistoryPanel();
+            localStorage.removeItem('locationHistory');
+        }
+        
+        // Function to update tracker location
+        function updateLocation(lat, lng, accuracy = null, speed = null, source = "auto") {
+            document.getElementById('latitude').textContent = lat.toFixed(6);
+            document.getElementById('longitude').textContent = lng.toFixed(6);
+            
+            if (accuracy !== null) {
+                document.getElementById('accuracy').textContent = `${accuracy.toFixed(1)} m`;
+            }
+            
+            if (speed !== null) {
+                document.getElementById('speed').textContent = `${speed.toFixed(1)} km/h`;
+            }
+            
+            // Update map
+            if (!marker) {
+                marker = L.marker([lat, lng]).addTo(map);
+            } else {
+                marker.setLatLng([lat, lng]);
+            }
+            
+            map.setView([lat, lng], 15);
+            
+            // Update last update time
+            document.getElementById('last-update').innerHTML = 
+                '<i class="far fa-clock"></i><span>Last update: Just now</span>';
+            
+            // Add to history
+            addToHistory(lat, lng, source);
+        }
+        
+        // Function to set manual coordinates
+        function setManualCoordinates() {
+            const lat = parseFloat(document.getElementById('manual-lat').value);
+            const lng = parseFloat(document.getElementById('manual-lng').value);
+            
+            if (isNaN(lat) || isNaN(lng)) {
+                alert('Please enter valid latitude and longitude values');
+                return;
+            }
+            
+            // Basic validation
+            if (lat < -90 || lat > 90) {
+                alert('Latitude must be between -90 and 90 degrees');
+                return;
+            }
+            
+            if (lng < -180 || lng > 180) {
+                alert('Longitude must be between -180 and 180 degrees');
+                return;
+            }
+            
+            updateLocation(lat, lng, 10, 0, "manual");
+            
+            // Also send to backend
+            sendManualUpdate(lat, lng);
+        }
+        
+        // Function to send manual update to backend
+        async function sendManualUpdate(lat, lng) {
+            try {
+                const response = await fetch('/api/update', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        device_id: 'ESP-Tracker-01',
+                        latitude: lat,
+                        longitude: lng,
+                        accuracy: 10,
+                        speed: 0,
+                        battery: parseInt(document.getElementById('battery-percentage').textContent),
+                        signal: 80,
+                        source: 'manual'
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to update location');
+                }
+                
+                console.log('Manual update sent successfully');
+                
+            } catch (error) {
+                console.error('Error sending manual update:', error);
+            }
+        }
+        
+        // Function to update battery level
+        function updateBattery(percentage) {
+            const batteryFill = document.getElementById('battery-fill');
+            const batteryText = document.getElementById('battery-percentage');
+            
+            batteryFill.style.width = `${percentage}%`;
+            batteryText.textContent = `${percentage}%`;
+            
+            if (percentage < 20) {
+                batteryFill.classList.add('low-battery');
+            } else {
+                batteryFill.classList.remove('low-battery');
+            }
+        }
+        
+        // Function to update signal strength
+        function updateSignal(strength) {
+            const signalElement = document.getElementById('signal-strength');
+            
+            if (strength > 70) {
+                signalElement.innerHTML = '<i class="fas fa-signal"></i><span>Signal: Excellent</span>';
+            } else if (strength > 40) {
+                signalElement.innerHTML = '<i class="fas fa-signal"></i><span>Signal: Good</span>';
+            } else if (strength > 20) {
+                signalElement.innerHTML = '<i class="fas fa-signal"></i><span>Signal: Fair</span>';
+            } else {
+                signalElement.innerHTML = '<i class="fas fa-signal"></i><span>Signal: Poor</span>';
+            }
+        }
+        
+        // Function to fetch data from API
+        async function fetchTrackerData() {
+            try {
+                const response = await fetch('/api/tracker-data');
+                
+                if (!response.ok) {
+                    throw new Error('Failed to fetch tracker data');
+                }
+                
+                const data = await response.json();
+                
+                // Update UI with received data
+                updateLocation(
+                    data.latitude, 
+                    data.longitude, 
+                    data.accuracy, 
+                    data.speed
+                );
+                
+                updateBattery(data.battery);
+                updateSignal(data.signal);
+                
+            } catch (error) {
+                console.error('Error fetching tracker data:', error);
+                // For demonstration - use random location around a center point
+                // In production, this would be replaced with proper error handling
+                simulateLocation();
+            }
+        }
+        
+        // For demonstration/testing - simulate location updates
+        function simulateLocation() {
+            // Generate a random location near San Francisco
+            const baseLat = 12.870789;
+            const baseLng = 80.222075;
+            
+            const randomLat = baseLat + (Math.random() - 0.5) * 0.05;
+            const randomLng = baseLng + (Math.random() - 0.5) * 0.05;
+            
+            updateLocation(
+                randomLat, 
+                randomLng, 
+                Math.random() * 20 + 5, // 5-25m accuracy 
+                Math.random() * 50       // 0-50 km/h speed
+            );
+            
+            // Simulate battery level
+            updateBattery(Math.floor(Math.random() * 100));
+            
+            // Simulate signal strength
+            updateSignal(Math.floor(Math.random() * 100));
+        }
+        
+        // Event listeners
+        document.getElementById('refresh-btn').addEventListener('click', fetchTrackerData);
+        
+        document.getElementById('directions-btn').addEventListener('click', () => {
+            const lat = document.getElementById('latitude').textContent;
+            const lng = document.getElementById('longitude').textContent;
+            
+            if (lat !== '--' && lng !== '--') {
+                window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank');
+            } else {
+                alert('No tracker location available');
+            }
+        });
+        
+        document.getElementById('set-manual-btn').addEventListener('click', setManualCoordinates);
+        
+        document.getElementById('clear-history-btn').addEventListener('click', clearHistory);
+        
+        // Map click to set manual coordinates
+        map.on('click', function(e) {
+            document.getElementById('manual-lat').value = e.latlng.lat.toFixed(6);
+            document.getElementById('manual-lng').value = e.latlng.lng.toFixed(6);
+        });
+        
+        // Load history from localStorage
+        loadHistoryFromStorage();
+        
+        // Simulate initial data (only if no history)
+        if (locationHistory.length === 0) {
+            simulateLocation();
+        } else {
+            // Use the most recent location from history
+            const latest = locationHistory[0];
+            updateLocation(latest.lat, latest.lng);
+        }
+        
+        // Set up automatic refresh every 30 seconds
+        setInterval(() => {
+            const lastUpdate = document.getElementById('last-update');
+            const currentText = lastUpdate.querySelector('span').textContent;
+            const minutesAgo = parseInt(currentText.match(/(\d+) min ago/) || [0, 0])[1];
+            
+            if (currentText.includes('Just now')) {
+                lastUpdate.innerHTML = '<i class="far fa-clock"></i><span>Last update: 1 min ago</span>';
+            } else if (minutesAgo < 30) {
+                lastUpdate.innerHTML = `<i class="far fa-clock"></i><span>Last update: ${minutesAgo + 1} min ago</span>`;
+            }
+        }, 60000);
+        
+        // Fetch data every 30 seconds
+        setInterval(fetchTrackerData, 30000);
+    </script>
+</body>
+</html>

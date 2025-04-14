@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AirTag Tracking | IoT GPS Tracker</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f5f5f5;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+        }
+
+        .logo i {
+            font-size: 24px;
+            color: #4285f4;
+            margin-right: 10px;
+        }
+
+        .logo h1 {
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .nav-link {
+            color: #4285f4;
+            text-decoration: none;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+        }
+
+        .nav-link i {
+            margin-right: 5px;
+        }
+
+        .nav-link:hover {
+            text-decoration: underline;
+        }
+
+        #mapid {
+            height: 400px;
+            width: 100%;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        #location-info {
+            margin-bottom: 15px;
+            font-size: 16px;
+            color: #666;
+        }
+
+        #directions-button {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.2s;
+        }
+
+        #directions-button:hover {
+            background-color: #45a049;
+        }
+
+        #google-directions {
+            margin-top: 20px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">
+                <i class="fas fa-tag"></i>
+                <h1>AirTag Tracking</h1>
+            </div>
+        </div>
+
+        <div class="nav-links">
+            <a href="/" class="nav-link">
+                <i class="fas fa-home"></i> Dashboard
+            </a>
+            <a href="/find-vehicle" class="nav-link">
+                <i class="fas fa-tag"></i> Find Vehicle
+            </a>
+            <a href="/simulate" class="nav-link">
+                <i class="fas fa-vial"></i> Simulator
+            </a>
+        </div>
+
+        <div id="mapid"></div>
+        <div id="location-info">Loading location...</div>
+        <button id="directions-button" onclick="getDirections()" disabled>
+            <i class="fas fa-directions"></i> Get Directions
+        </button>
+        <div id="google-directions"></div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js"></script>
+    <script>
+        var map = L.map('mapid').setView([0, 0], 2); // Default view
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        var marker;
+        var currentLat, currentLng;
+
+        function updateMap(data) {
+            currentLat = data.latitude;
+            currentLng = data.longitude;
+
+            document.getElementById('location-info').innerText = `Latitude: ${currentLat.toFixed(6)}, Longitude: ${currentLng.toFixed(6)}`;
+            document.getElementById('directions-button').disabled = false;
+
+            if (marker) {
+                marker.setLatLng([currentLat, currentLng]);
+            } else {
+                marker = L.marker([currentLat, currentLng]).addTo(map);
+                map.setView([currentLat, currentLng], 15); // Zoom to the location
+            }
+        }
+
+        function fetchLocation() {
+            fetch('/api/tracker-data')
+                .then(response => response.json())
+                .then(data => {
+                    if (data && typeof data.latitude === 'number' && typeof data.longitude === 'number') {
+                        updateMap(data);
+                    } else {
+                        document.getElementById('location-info').innerText = "Error: Could not retrieve valid location data.";
+                    }
+                })
+                .catch(error => {
+                    console.error("Error fetching location:", error);
+                    document.getElementById('location-info').innerText = "Error: Could not connect to the backend.";
+                });
+        }
+
+        function getDirections() {
+            if (currentLat && currentLng) {
+                var googleMapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${currentLat},${currentLng}&destination=${currentLat},${currentLng}&travelmode=driving`;
+                document.getElementById('google-directions').innerHTML = `<iframe width="100%" height="300" style="border:0" allowfullscreen src="${googleMapsUrl}"></iframe>`;
+            } else {
+                alert("Current location not available.");
+            }
+        }
+
+        // Fetch location immediately when the page loads
+        fetchLocation();
+
+        // Optionally, you can set up a periodic refresh of the location
+        // setInterval(fetchLocation, 5000); // Fetch every 5 seconds
+    </script>
+</body>
+</html>

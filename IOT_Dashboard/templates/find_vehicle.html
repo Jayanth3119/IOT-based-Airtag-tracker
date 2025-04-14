@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Find My Vehicle</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0f1115;
+            color: #f1f1f1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        .dashboard-button {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: linear-gradient(135deg, #00bcd4, #1de9b6);
+            color: #111;
+            border: none;
+            padding: 10px 15px;
+            font-size: 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.3s ease;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+        }
+
+        .dashboard-button i {
+            margin-right: 5px;
+        }
+
+        .dashboard-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(0, 255, 255, 0.4);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 30px;
+            color: #00bcd4;
+            animation: fadeIn 1s ease-in-out;
+            text-align: center; /* Center the title */
+        }
+
+        button {
+            background: linear-gradient(135deg, #00bcd4, #1de9b6);
+            color: #111;
+            border: none;
+            padding: 15px 35px;
+            font-size: 1.2rem;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.3s ease;
+            margin-bottom: 20px; /* Add some margin below the button */
+        }
+
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(0, 255, 255, 0.4);
+        }
+
+        #status {
+            margin-top: 30px;
+            font-size: 1.1rem;
+            min-height: 24px;
+            color: #ccc;
+            animation: fadeIn 1s ease-in-out;
+            text-align: center;
+        }
+
+        #location {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        #location a {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 10px 20px;
+            background: #1f2933;
+            color: #00e5ff;
+            border-radius: 8px;
+            text-decoration: none;
+            transition: background 0.3s ease, transform 0.2s ease;
+        }
+
+        #location a:hover {
+            background: #26333f;
+            transform: translateY(-2px);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        footer {
+            position: absolute;
+            bottom: 10px;
+            font-size: 0.9rem;
+            color: #555;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
+</head>
+<body>
+    <a href="/" class="dashboard-button">
+        <i class="fas fa-home"></i> Dashboard
+    </a>
+    <h1>🚗 Find My Vehicle</h1>
+    <button onclick="findVehicle()">🔍 Find Now</button>
+    <div id="status">Status: Waiting for action...</div>
+    <div id="location"></div>
+
+    <footer>🔒 Secure Location Tracker</footer>
+
+
+    <script>
+        const blynkToken = '7y2rkukURDMGBWti3L4Re397jQP7u1Yp';
+        const triggerPin = 'V0';
+        const locationPin = 'V1';
+
+        function findVehicle() {
+            const triggerUrl = `https://blynk.cloud/external/api/update?token=${blynkToken}&${triggerPin}=1`;
+            document.getElementById('status').innerText = "⏳ Searching for location...";
+            document.getElementById('location').innerHTML = "";
+
+            fetch(triggerUrl)
+                .then(response => {
+                    if (!response.ok) throw new Error("Failed to trigger location.");
+                    document.getElementById('status').innerText = "📡 Request sent! Waiting for coordinates...";
+
+                    // Turn off pin after 5 seconds
+                    setTimeout(() => {
+                        const offUrl = `https://blynk.cloud/external/api/update?token=${blynkToken}&${triggerPin}=0`;
+                        fetch(offUrl);
+                    }, 5000);
+
+                    // Fetch location after delay (wait for SIM800L to get response)
+                    setTimeout(fetchLocation, 6000);
+                })
+                .catch(error => {
+                    document.getElementById('status').innerText = "❌ Couldn't send request.";
+                });
+        }
+        function fetchLocation() {
+            // Simulated coordinates
+            const lat = '12.870789';
+            const lon = '80.222075';
+
+            document.getElementById('status').innerText = "✅ Coordinates received!";
+            document.getElementById('location').innerHTML = `
+                <div style="margin-top: 10px; font-size: 1.1rem;">
+                    📍 <strong>Here are the coordinates you're searching:</strong><br/>
+                    🔹 Latitude: <span style="color:#00e5ff">${lat}</span><br/>
+                    🔹 Longitude: <span style="color:#00e5ff">${lon}</span><br/><br/>
+
+                    <div style="border-radius: 12px; overflow: hidden; box-shadow: 0 0 15px rgba(0,0,0,0.4); max-width: 90vw;">
+                        <iframe
+                            width="350"
+                            height="250"
+                            frameborder="0"
+                            style="border:0;"
+                            src="https://maps.google.com/maps?q=${lat},${lon}&z=15&output=embed"
+                            allowfullscreen>
+                        </iframe>
+                    </div>
+                </div>
+            `;
+        }
+
+
+    </script>
+
+
+</body>
+</html>
