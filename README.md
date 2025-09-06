@@ -1,54 +1,60 @@
-# 📍 IoT-Based AirTag Tracker
+# 📍 ESP32 UWB AirTag Clone  
 
-This project presents a simplified **IoT-based tracking system** inspired by Apple’s AirTag. It uses the **ESP8266**, **SIM800L GSM module**, a **buzzer**, and a **breadboard** for rapid prototyping. The objective is to build a compact and affordable device that helps users locate lost items via **automatic alerts** and **GSM-based location tracking**.
-
----
-
-## 🚀 Features
-
-- 📡 **GSM-Based Location Tracking** – Uses cellular tower triangulation to determine approximate location.
-- 🔊 **Buzzer Alert System** – Emits a loud sound when triggered for easy item location.
-- 🌐 **Cloud Integration (ThingSpeak)** – Sends GPS coordinates to ThingSpeak for real-time monitoring.
-- ⚙️ **Automated Triggers** – Buzzer is activated automatically on motion detection or power-up.
-- ❌ **No SMS or Relay Required** – Simplified design, eliminating need for manual commands.
-- 🌍 **Works Without Wi-Fi** – GSM connectivity ensures tracking in remote areas.
+This project replicates the **core features of Apple AirTag** — precision tracking and sound-based locating — using an **ESP32 UWB board**. It demonstrates how Ultra-Wideband (UWB) can be leveraged for short-range, centimeter-level tracking in a DIY setup.  
 
 ---
 
-## 🧰 Hardware Requirements
-
-- ✅ ESP8266 NodeMCU
-- ✅ SIM800L GSM Module
-- ✅ Active Buzzer
-- ✅ Breadboard & Jumper Wires
-- ✅ Power Supply (Lithium-ion battery recommended)
-
----
-
-## 🛠️ Circuit Diagram
-
-> 📌 *Coming Soon* – You can include a Fritzing diagram or schematic image here to visually explain wiring.
+## 🚀 Project Overview  
+- **Goal:** Recreate AirTag’s primary functions:  
+  - Precision distance measurement between two devices.  
+  - Sound playback for item locating.  
+- **Hardware Used:**  
+  - ESP32 UWB board with integrated UWB chip  
+  - OLED display  
+  - Push button (transmitter side)  
+  - Buzzer (receiver side)  
 
 ---
 
-## ⚙️ How It Works
+## ⚙️ Feature Implementation  
 
-1. On power-up or motion detection, the ESP8266 communicates with the SIM800L module.
-2. The GSM module fetches approximate location using nearby cell tower data.
-3. Location data is uploaded to **ThingSpeak** for real-time cloud-based tracking.
-4. Simultaneously, the ESP triggers the buzzer using a GPIO pin to emit a sound for nearby locating.
-5. No user intervention (e.g., SMS) is required for operation.
+- **📡 Precision Tracking**  
+  - UWB technology measures distance between transmitter and receiver.  
+  - Distance values are displayed in real-time on the OLED.  
 
----
+- **🔊 Sound Playback**  
+  - Pressing the transmitter button triggers a buzzer at the receiver.  
+  - Implemented via **ESP-NOW**, a lightweight Wi-Fi protocol that enables peer-to-peer communication without a router.  
 
-## 📈 ThingSpeak Integration
-
-1. Create a [ThingSpeak](https://thingspeak.com) account.
-2. Create a new channel and note the **Write API Key**.
-3. Update your ESP8266 firmware code with the ThingSpeak credentials.
-4. Monitor the location data and alerts via the ThingSpeak dashboard.
+- **🔄 Loop Execution**  
+  - Both tasks (distance measurement + buzzer control) run in the `loop()` function.  
+  - Updates occur every **2 seconds** using a timer library.  
 
 ---
 
-## 📦 Project Folder Structure
+## 🖥️ Code and Circuit Details  
 
+- **Libraries Used:** OLED, UWB functions, ESP-NOW, Timer.  
+- **Configuration:**  
+  - Each ESP32 board is assigned a unique MAC address for ESP-NOW broadcasting.  
+  - Button and buzzer pins are defined separately for transmitter and receiver roles.  
+- **Workflow:**  
+  - Input setup → wireless communication → callback functions → handlers for UWB + sound tasks.  
+
+---
+
+## 🧪 Live Testing and Results  
+
+- **Distance Measurement**  
+  - OLED displayed values like **20 cm, 60–70 cm**, scaling accurately with receiver movement.  
+- **Sound Playback**  
+  - Pressing the transmitter button reliably triggered the buzzer on the receiver.  
+- **Demo Test**  
+  - Receiver was hidden indoors; using **OLED distance feedback + buzzer sound**, the device was successfully located.  
+
+---
+
+## ⚠️ Limitations  
+
+- Unlike Apple’s AirTag, **global tracking is not supported**.  
+- Apple leverages its **iPhone ecosystem** for worldwide location reporting — this DIY build works only for **close-range, peer-to-peer tracking**.  
